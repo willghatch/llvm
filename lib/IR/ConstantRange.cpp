@@ -839,22 +839,17 @@ ConstantRange::binaryOr(const ConstantRange &Other) const {
   if (isEmptySet() || Other.isEmptySet())
     return ConstantRange(getBitWidth(), /*isFullSet=*/false);
 
-  // I don't want to #include something to get a min function...
-  unsigned lminzeros = getUnsignedMin().countLeadingZeros();
-  unsigned rminzeros = Other.getUnsignedMin().countLeadingZeros();
+  APInt umax_of_min = APIntOps::umax(getUnsignedMin(), Other.getUnsignedMin());
+
   unsigned lmaxzeros = getUnsignedMax().countLeadingZeros();
   unsigned rmaxzeros = Other.getUnsignedMax().countLeadingZeros();
-  unsigned minzeros = lminzeros < rminzeros ? lminzeros : rminzeros;
+  // I don't want to #include something to get a min function...
   unsigned maxzeros = lmaxzeros < rmaxzeros ? lmaxzeros : rmaxzeros;
-
-  int minshiftamt = getBitWidth() - minzeros - 1;
-  APInt minval = (minshiftamt < 0) ?
-    APInt(getBitWidth(), 0) :
-    APInt(getBitWidth(), 1) << minshiftamt;
   APInt maxval = APInt(getBitWidth(), 1) << (getBitWidth() - maxzeros);
-  if (minval == maxval)
+
+  if (umax_of_min == maxval)
     return ConstantRange(getBitWidth(), /*isFullSet=*/true);
-  return ConstantRange(minval, maxval);
+  return ConstantRange(umax_of_min, maxval);
 }
 
 ConstantRange
