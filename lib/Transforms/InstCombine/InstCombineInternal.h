@@ -20,6 +20,7 @@
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/TargetFolder.h"
 #include "llvm/Analysis/ValueTracking.h"
+#include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
@@ -182,6 +183,7 @@ private:
   AssumptionCache &AC;
   TargetLibraryInfo &TLI;
   DominatorTree &DT;
+  LazyValueInfo &LVI;
   const DataLayout &DL;
 
   // Optional analyses. When non-null, these can both be used to do better
@@ -194,10 +196,11 @@ public:
   InstCombiner(InstCombineWorklist &Worklist, BuilderTy *Builder,
                bool MinimizeSize, bool ExpensiveCombines, AliasAnalysis *AA,
                AssumptionCache &AC, TargetLibraryInfo &TLI,
-               DominatorTree &DT, const DataLayout &DL, LoopInfo *LI)
+               DominatorTree &DT, LazyValueInfo &LVI, 
+               const DataLayout &DL, LoopInfo *LI)
       : Worklist(Worklist), Builder(Builder), MinimizeSize(MinimizeSize),
         ExpensiveCombines(ExpensiveCombines), AA(AA), AC(AC), TLI(TLI), DT(DT),
-        DL(DL), LI(LI), MadeIRChange(false) {}
+        LVI(LVI), DL(DL), LI(LI), MadeIRChange(false) {}
 
   /// \brief Run the combiner over the entire worklist until it is empty.
   ///

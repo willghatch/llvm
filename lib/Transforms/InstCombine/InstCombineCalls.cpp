@@ -23,6 +23,8 @@
 #include "llvm/Analysis/InstructionSimplify.h"
 #include "llvm/Analysis/MemoryBuiltins.h"
 #include "llvm/Analysis/ValueTracking.h"
+#include "llvm/Analysis/LazyValueInfo.h"
+#include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/CallSite.h"
 #include "llvm/IR/Constant.h"
@@ -1520,8 +1522,26 @@ Instruction *InstCombiner::visitCallInst(CallInst &CI) {
       return I;
     break;
 
-  case Intrinsic::uadd_with_overflow:
   case Intrinsic::sadd_with_overflow:
+    {
+      Value *LHS = II->getArgOperand(0);
+      Value *RHS = II->getArgOperand(1);
+      BasicBlock *IIbb = II->getParent();
+      auto lrange = LVI.getConstantRange(LHS, IIbb, II);
+      auto rrange = LVI.getConstantRange(RHS, IIbb, II);
+
+      auto resultrange = lrange.add(rrange);
+      if (!resultrange.isSignWrappedSet()){
+        Builder->SetInsertPoint(II);
+        auto addresult = Builder->CreateNSWAdd(LHS, RHS);
+        auto overflowconst = Builder->getFalse();
+        auto tupleresult = CreateOverflowTuple(II, addresult, overflowconst);
+        return tupleresult;
+      }
+
+    }
+
+  case Intrinsic::uadd_with_overflow:
   case Intrinsic::umul_with_overflow:
   case Intrinsic::smul_with_overflow:
     if (isa<Constant>(II->getArgOperand(0)) &&

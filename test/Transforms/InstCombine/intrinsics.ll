@@ -114,9 +114,9 @@ define %ov.result.32 @saddtest_nsw(i8 %a, i8 %b) {
   %x = call %ov.result.32 @llvm.sadd.with.overflow.i32(i32 %A, i32 %B)
   ret %ov.result.32 %x
 ; CHECK-LABEL: @saddtest_nsw
-; CHECK: %x = add nsw i32 %A, %B
-; CHECK-NEXT: %1 = insertvalue %ov.result.32 { i32 undef, i1 false }, i32 %x, 0
-; CHECK-NEXT:  ret %ov.result.32 %1
+; CHECK: %1 = add nsw i32 %A, %B
+; CHECK-NEXT: %x = insertvalue %ov.result.32 { i32 undef, i1 false }, i32 %1, 0
+; CHECK-NEXT:  ret %ov.result.32 %x
 }
 
 define %ov.result.32 @uaddtest_nuw(i32 %a, i32 %b) {
